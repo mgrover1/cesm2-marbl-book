@@ -259,6 +259,106 @@
         <!-- Table of contents -->
         <div class="d-none d-md-block col-md-2 bd-toc show">
             
+            <div class="tocsection onthispage pt-5 pb-3">
+                <i class="fas fa-list"></i> Contents
+            </div>
+            <nav id="bd-toc-nav" aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#imports">
+   Imports
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#spin-up-a-dask-cluster">
+   Spin up a Dask Cluster
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#read-in-the-data">
+   Read in the Data
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#read-in-the-grid-from-pop-tools">
+     Read in the Grid from Pop-Tools
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#apply-computation-cache-using-xpersist">
+   Apply Computation, Cache Using
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     xpersist
+    </span>
+   </code>
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#after-calculation-spin-down-the-cluster">
+     After Calculation, Spin Down the Cluster
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#plot-the-results">
+   Plot the Results
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#e-ratio">
+     E Ratio
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#poc-flux-100-m">
+     POC Flux 100 m
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#photoc-tot-zint-100-m">
+     PhotoC TOT Zint 100 m
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#jint-100-m-dic">
+     Jint 100 m DIC
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#n2p-flux-100-m">
+     N2P Flux 100 m
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#add-a-cyclic-point-to-the-dataset">
+     Add a Cyclic Point to the Dataset
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#take-a-look-at-ds-glb-which-contains-global-integral-stats">
+     Take a Look at
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       ds_glb
+      </span>
+     </code>
+     which Contains Global Integral Stats
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#plot-global-maps-with-global-integrals">
+     Plot Global Maps with Global Integrals
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+            </nav>
         </div>
     </div>
 </div>
@@ -269,11 +369,18 @@
                 
   <div class="section" id="biological-pump">
 <h1>Biological Pump<a class="headerlink" href="#biological-pump" title="Permalink to this headline">¶</a></h1>
-<p>Looking at the biological pump</p>
+<div class="section" id="imports">
+<h2>Imports<a class="headerlink" href="#imports" title="Permalink to this headline">¶</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="o">%</span><span class="k">load_ext</span> autoreload
 <span class="o">%</span><span class="k">autoreload</span> 2
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>The autoreload extension is already loaded. To reload it, use:
+  %reload_ext autoreload
 </pre></div>
 </div>
 </div>
@@ -286,6 +393,7 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+<span class="kn">import</span> <span class="nn">intake</span>
 
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="kn">import</span> <span class="nn">matplotlib.gridspec</span> <span class="k">as</span> <span class="nn">gridspec</span>
@@ -302,19 +410,54 @@
     <span class="n">xp</span><span class="o">.</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;cache_dir&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cache_dir</span>
 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;CESMDATAROOT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;/glade/scratch/mclong/inputdata&#39;</span>
 <span class="kn">import</span> <span class="nn">pop_tools</span>
 
 <span class="kn">import</span> <span class="nn">climo_utils</span> <span class="k">as</span> <span class="nn">cu</span>
+<span class="kn">import</span> <span class="nn">plot</span>
 <span class="kn">import</span> <span class="nn">utils</span>
+<span class="o">%</span><span class="k">matplotlib</span> inline
 </pre></div>
 </div>
 </div>
 </div>
+</div>
+<div class="section" id="spin-up-a-dask-cluster">
+<h2>Spin up a Dask Cluster<a class="headerlink" href="#spin-up-a-dask-cluster" title="Permalink to this headline">¶</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">intake</span>
-<span class="n">catalog</span> <span class="o">=</span> <span class="n">intake</span><span class="o">.</span><span class="n">open_esm_datastore</span><span class="p">(</span><span class="s1">&#39;data/campaign-cesm2-cmip6-timeseries.json&#39;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cluster</span><span class="p">,</span> <span class="n">client</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_ClusterClient</span><span class="p">()</span>
+<span class="n">cluster</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span> <span class="c1">#adapt(minimum_jobs=0, maximum_jobs=24)</span>
+<span class="n">client</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><table style="border: 2px solid white;">
+<tr>
+<td style="vertical-align: top; border: 0px solid white">
+<h3 style="text-align: left;">Client</h3>
+<ul style="text-align: left; list-style: none; margin: 0; padding: 0;">
+  <li><b>Scheduler: </b>tcp://10.12.206.57:33546</li>
+  <li><b>Dashboard: </b><a href='https://jupyterhub.hpc.ucar.edu/stable/user/mgrover/proxy/8787/status' target='_blank'>https://jupyterhub.hpc.ucar.edu/stable/user/mgrover/proxy/8787/status</a></li>
+</ul>
+</td>
+<td style="vertical-align: top; border: 0px solid white">
+<h3 style="text-align: left;">Cluster</h3>
+<ul style="text-align: left; list-style:none; margin: 0; padding: 0;">
+  <li><b>Workers: </b>0</li>
+  <li><b>Cores: </b>0</li>
+  <li><b>Memory: </b>0 B</li>
+</ul>
+</td>
+</tr>
+</table></div></div>
+</div>
+</div>
+<div class="section" id="read-in-the-data">
+<h2>Read in the Data<a class="headerlink" href="#read-in-the-data" title="Permalink to this headline">¶</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">catalog</span> <span class="o">=</span> <span class="n">intake</span><span class="o">.</span><span class="n">open_esm_datastore</span><span class="p">(</span><span class="s1">&#39;data/campaign-cesm2-cmip6-timeseries.json&#39;</span><span class="p">)</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">catalog</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">experiment</span><span class="o">=</span><span class="s1">&#39;historical&#39;</span><span class="p">,</span> <span class="n">component</span><span class="o">=</span><span class="s1">&#39;ocn&#39;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="s1">&#39;pop.h&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">df</span>
 <span class="n">variables</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">variable</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
 </pre></div>
@@ -340,35 +483,8 @@
 </div>
 </div>
 </div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cluster</span><span class="p">,</span> <span class="n">client</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_ClusterClient</span><span class="p">()</span>
-<span class="n">cluster</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="mi">12</span><span class="p">)</span> <span class="c1">#adapt(minimum_jobs=0, maximum_jobs=24)</span>
-<span class="n">client</span>
-</pre></div>
-</div>
-</div>
-<div class="cell_output docutils container">
-<div class="output text_html"><table style="border: 2px solid white;">
-<tr>
-<td style="vertical-align: top; border: 0px solid white">
-<h3 style="text-align: left;">Client</h3>
-<ul style="text-align: left; list-style: none; margin: 0; padding: 0;">
-  <li><b>Scheduler: </b>tcp://10.12.206.54:34243</li>
-  <li><b>Dashboard: </b><a href='https://jupyterhub.hpc.ucar.edu/stable/user/mclong/proxy/8787/status' target='_blank'>https://jupyterhub.hpc.ucar.edu/stable/user/mclong/proxy/8787/status</a>
-</ul>
-</td>
-<td style="vertical-align: top; border: 0px solid white">
-<h3 style="text-align: left;">Cluster</h3>
-<ul style="text-align: left; list-style:none; margin: 0; padding: 0;">
-  <li><b>Workers: </b>0</li>
-  <li><b>Cores: </b>0</li>
-  <li><b>Memory: </b>0 B</li>
-</ul>
-</td>
-</tr>
-</table></div></div>
-</div>
+<div class="section" id="read-in-the-grid-from-pop-tools">
+<h3>Read in the Grid from Pop-Tools<a class="headerlink" href="#read-in-the-grid-from-pop-tools" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">grid</span> <span class="o">=</span> <span class="n">pop_tools</span><span class="o">.</span><span class="n">get_grid</span><span class="p">(</span><span class="s1">&#39;POP_gx1v7&#39;</span><span class="p">)</span>
@@ -378,16 +494,16 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/glade/work/mclong/miniconda3/envs/cesm2-marbl/lib/python3.7/site-packages/numba/np/ufunc/parallel.py:365: NumbaWarning: The TBB threading layer requires TBB version 2019.5 or later i.e., TBB_INTERFACE_VERSION &gt;= 11005. Found TBB_INTERFACE_VERSION = 6103. The TBB threading layer is disabled.
-  warnings.warn(problem)
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b3fd7e44c50&gt;
 </pre></div>
 </div>
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b9b1665b450&gt;
-</pre></div>
-</div>
-<img alt="../_images/biological-pump_6_2.png" src="../_images/biological-pump_6_2.png" />
+<img alt="../_images/biological-pump_10_1.png" src="../_images/biological-pump_10_1.png" />
 </div>
 </div>
+</div>
+</div>
+<div class="section" id="apply-computation-cache-using-xpersist">
+<h2>Apply Computation, Cache Using <code class="docutils literal notranslate"><span class="pre">xpersist</span></code><a class="headerlink" href="#apply-computation-cache-using-xpersist" title="Permalink to this headline">¶</a></h2>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">nmolcm2s_to_molm2yr</span> <span class="o">=</span> <span class="mf">1e-9</span> <span class="o">*</span> <span class="mf">1e4</span> <span class="o">*</span> <span class="mi">86400</span> <span class="o">*</span> <span class="mf">365.</span>
@@ -828,7 +944,20 @@ Data variables:
     SiO2_FLUX_100m        (nlat, nlon) float32 nan nan nan nan ... nan nan nan
     CaCO3_FLUX_100m       (nlat, nlon) float32 nan nan nan nan ... nan nan nan
     N2P_FLUX_100m         (nlat, nlon) float32 nan nan nan nan ... nan nan nan
-    e_ratio               (nlat, nlon) float32 nan nan nan nan ... nan nan nan</pre><div class='xr-wrap' hidden><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-c4a1d57a-7dce-4c0c-bb7e-63d905be66c3' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-c4a1d57a-7dce-4c0c-bb7e-63d905be66c3' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>nlat</span>: 384</li><li><span>nlon</span>: 320</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-f739855a-9589-4dde-8cea-191cd33cf6ff' class='xr-section-summary-in' type='checkbox'  checked><label for='section-f739855a-9589-4dde-8cea-191cd33cf6ff' class='xr-section-summary' >Coordinates: <span>(4)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>TLONG</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>320.6 321.7 322.8 ... 319.4 319.8</div><input id='attrs-e49b4dbf-7a88-4580-a93d-d31b64aa048b' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-e49b4dbf-7a88-4580-a93d-d31b64aa048b' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-98a1ef3d-3528-4b02-b4f2-7af1cb26abbb' class='xr-var-data-in' type='checkbox'><label for='data-98a1ef3d-3528-4b02-b4f2-7af1cb26abbb' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>long_name :</span></dt><dd>array of t-grid longitudes</dd><dt><span>units :</span></dt><dd>degrees_east</dd></dl></div><div class='xr-var-data'><pre>array([[320.56250892, 321.68750895, 322.81250898, ..., 317.18750883,
+    e_ratio               (nlat, nlon) float32 nan nan nan nan ... nan nan nan
+Attributes:
+    time_period_freq:        month_1
+    history:                 none
+    cell_methods:            cell_methods = time: mean ==&gt; the variable value...
+    title:                   b.e21.BHIST.f09_g17.CMIP6-historical.011
+    model_doi_url:           https://doi.org/10.5065/D67H1H0V
+    Conventions:             CF-1.0; http://www.cgd.ucar.edu/cms/eaton/netcdf...
+    calendar:                All years have exactly  365 days.
+    revision:                $Id: tavg.F90 89644 2018-08-04 14:26:01Z klindsay $
+    intake_esm_varname:      photoC_TOT_zint_100m
+    contents:                Diagnostic and Prognostic Variables
+    source:                  CCSM POP2, the CCSM Ocean Component
+    intake_esm_dataset_key:  ocn.historical.pop.h</pre><div class='xr-wrap' hidden><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-0df36a68-ab53-49d2-a79d-09e76574bfe8' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-0df36a68-ab53-49d2-a79d-09e76574bfe8' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'><ul class='xr-dim-list'><li><span>nlat</span>: 384</li><li><span>nlon</span>: 320</li></ul></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-66898bbe-77aa-4b24-b770-0f7bce0a2070' class='xr-section-summary-in' type='checkbox'  checked><label for='section-66898bbe-77aa-4b24-b770-0f7bce0a2070' class='xr-section-summary' >Coordinates: <span>(4)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>TLONG</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>320.6 321.7 322.8 ... 319.4 319.8</div><input id='attrs-2c81df69-d572-4dfb-a85f-271f97098ddd' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-2c81df69-d572-4dfb-a85f-271f97098ddd' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-7e64563b-7e4a-42aa-8312-b19a714b1669' class='xr-var-data-in' type='checkbox'><label for='data-7e64563b-7e4a-42aa-8312-b19a714b1669' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>long_name :</span></dt><dd>array of t-grid longitudes</dd><dt><span>units :</span></dt><dd>degrees_east</dd></dl></div><div class='xr-var-data'><pre>array([[320.56250892, 321.68750895, 322.81250898, ..., 317.18750883,
         318.31250886, 319.43750889],
        [320.56250892, 321.68750895, 322.81250898, ..., 317.18750883,
         318.31250886, 319.43750889],
@@ -840,7 +969,7 @@ Data variables:
        [320.23459477, 320.70358949, 321.17207442, ..., 318.82794339,
         319.29642832, 319.76542721],
        [320.21650899, 320.6493303 , 321.08163473, ..., 318.91838308,
-        319.3506875 , 319.78351267]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>TLAT</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>-79.22 -79.22 ... 72.19 72.19</div><input id='attrs-3659217b-3486-44c5-9eca-89815f8b8d1e' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-3659217b-3486-44c5-9eca-89815f8b8d1e' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-965d82ad-500b-4c54-b390-0674ab97b608' class='xr-var-data-in' type='checkbox'><label for='data-965d82ad-500b-4c54-b390-0674ab97b608' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>long_name :</span></dt><dd>array of t-grid latitudes</dd><dt><span>units :</span></dt><dd>degrees_north</dd></dl></div><div class='xr-var-data'><pre>array([[-79.22052261, -79.22052261, -79.22052261, ..., -79.22052261,
+        319.3506875 , 319.78351267]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>TLAT</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>-79.22 -79.22 ... 72.19 72.19</div><input id='attrs-2752ae53-9e00-47ce-9d81-f1b1ea37e833' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-2752ae53-9e00-47ce-9d81-f1b1ea37e833' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-532a6bde-5664-4f8f-a02e-a7811be3fcaa' class='xr-var-data-in' type='checkbox'><label for='data-532a6bde-5664-4f8f-a02e-a7811be3fcaa' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>long_name :</span></dt><dd>array of t-grid latitudes</dd><dt><span>units :</span></dt><dd>degrees_north</dd></dl></div><div class='xr-var-data'><pre>array([[-79.22052261, -79.22052261, -79.22052261, ..., -79.22052261,
         -79.22052261, -79.22052261],
        [-78.68630626, -78.68630626, -78.68630626, ..., -78.68630626,
         -78.68630626, -78.68630626],
@@ -852,7 +981,7 @@ Data variables:
        [ 71.73524335,  71.73881845,  71.74596231, ...,  71.74596231,
          71.73881845,  71.73524335],
        [ 72.18597561,  72.18933231,  72.19603941, ...,  72.19603941,
-         72.18933231,  72.18597562]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ULONG</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>321.1 322.3 323.4 ... 319.6 320.0</div><input id='attrs-9c3b9c16-e4b4-48b6-a383-d990f49feed0' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-9c3b9c16-e4b4-48b6-a383-d990f49feed0' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-aeee4d70-8a10-45c5-a360-98b42d24e760' class='xr-var-data-in' type='checkbox'><label for='data-aeee4d70-8a10-45c5-a360-98b42d24e760' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>long_name :</span></dt><dd>array of u-grid longitudes</dd><dt><span>units :</span></dt><dd>degrees_east</dd></dl></div><div class='xr-var-data'><pre>array([[321.12500894, 322.25000897, 323.375009  , ..., 317.75000884,
+         72.18933231,  72.18597562]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ULONG</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>321.1 322.3 323.4 ... 319.6 320.0</div><input id='attrs-d7fc646d-af0a-4e7e-b705-6ad44147d4c6' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-d7fc646d-af0a-4e7e-b705-6ad44147d4c6' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-3535d626-b667-4e4e-9b39-050124d5539c' class='xr-var-data-in' type='checkbox'><label for='data-3535d626-b667-4e4e-9b39-050124d5539c' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>long_name :</span></dt><dd>array of u-grid longitudes</dd><dt><span>units :</span></dt><dd>degrees_east</dd></dl></div><div class='xr-var-data'><pre>array([[321.12500894, 322.25000897, 323.375009  , ..., 317.75000884,
         318.87500887, 320.0000089 ],
        [321.12500894, 322.25000897, 323.375009  , ..., 317.75000884,
         318.87500887, 320.0000089 ],
@@ -864,7 +993,7 @@ Data variables:
        [320.45160767, 320.90286181, 321.35342745, ..., 319.097156  ,
         319.54841014, 320.00001293],
        [320.41397858, 320.82760085, 321.24052915, ..., 319.17241696,
-        319.58603923, 320.00001259]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ULAT</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>-78.95 -78.95 ... 72.41 72.41</div><input id='attrs-ce0e3817-464f-46af-a341-3dbc1fde47be' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-ce0e3817-464f-46af-a341-3dbc1fde47be' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-8813f99e-d641-4d00-a522-9d07c810fb3a' class='xr-var-data-in' type='checkbox'><label for='data-8813f99e-d641-4d00-a522-9d07c810fb3a' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>long_name :</span></dt><dd>array of u-grid latitudes</dd><dt><span>units :</span></dt><dd>degrees_north</dd></dl></div><div class='xr-var-data'><pre>array([[-78.95289509, -78.95289509, -78.95289509, ..., -78.95289509,
+        319.58603923, 320.00001259]])</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>ULAT</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>-78.95 -78.95 ... 72.41 72.41</div><input id='attrs-1a72f947-4793-437a-8057-9f1ab9922248' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-1a72f947-4793-437a-8057-9f1ab9922248' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-6a46c61f-aa82-457b-b675-807a141c8325' class='xr-var-data-in' type='checkbox'><label for='data-6a46c61f-aa82-457b-b675-807a141c8325' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>long_name :</span></dt><dd>array of u-grid latitudes</dd><dt><span>units :</span></dt><dd>degrees_north</dd></dl></div><div class='xr-var-data'><pre>array([[-78.95289509, -78.95289509, -78.95289509, ..., -78.95289509,
         -78.95289509, -78.95289509],
        [-78.41865507, -78.41865507, -78.41865507, ..., -78.41865507,
         -78.41865507, -78.41865507],
@@ -876,7 +1005,7 @@ Data variables:
        [ 71.95983548,  71.96504258,  71.97371054, ...,  71.96504258,
          71.95983548,  71.95809872],
        [ 72.4135549 ,  72.41841155,  72.42649554, ...,  72.41841155,
-         72.4135549 ,  72.41193498]])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-ce5be71d-e32d-49d1-a619-c0a08f91d885' class='xr-section-summary-in' type='checkbox'  checked><label for='section-ce5be71d-e32d-49d1-a619-c0a08f91d885' class='xr-section-summary' >Data variables: <span>(8)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>photoC_TOT_zint_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-93b5e754-1a93-4766-aea7-d2485de36f93' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-93b5e754-1a93-4766-aea7-d2485de36f93' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-438d3b53-172a-4b14-8435-eb88b4a7e697' class='xr-var-data-in' type='checkbox'><label for='data-438d3b53-172a-4b14-8435-eb88b4a7e697' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
+         72.4135549 ,  72.41193498]])</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-dfeff105-9439-4a96-9359-3f127a1ca8a2' class='xr-section-summary-in' type='checkbox'  checked><label for='section-dfeff105-9439-4a96-9359-3f127a1ca8a2' class='xr-section-summary' >Data variables: <span>(8)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>photoC_TOT_zint_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-12b32998-d6df-4f06-887d-a3f735b123e1' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-12b32998-d6df-4f06-887d-a3f735b123e1' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-1690ed2c-efce-4486-95fc-851b46601b4a' class='xr-var-data-in' type='checkbox'><label for='data-1690ed2c-efce-4486-95fc-851b46601b4a' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
@@ -888,7 +1017,7 @@ Data variables:
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
-               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>Jint_100m_DIC</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-07dd645c-5e94-4fbe-baae-a1aa37c62a30' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-07dd645c-5e94-4fbe-baae-a1aa37c62a30' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-9dfd9ef4-d5ce-437c-a6f3-913fe6f66c35' class='xr-var-data-in' type='checkbox'><label for='data-9dfd9ef4-d5ce-437c-a6f3-913fe6f66c35' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
+               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>Jint_100m_DIC</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-5e94a795-4690-4b6e-af6e-7e9ce7ebbf22' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-5e94a795-4690-4b6e-af6e-7e9ce7ebbf22' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-488af18e-b06d-43fd-985b-055a62f116ab' class='xr-var-data-in' type='checkbox'><label for='data-488af18e-b06d-43fd-985b-055a62f116ab' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
@@ -900,7 +1029,7 @@ Data variables:
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
-               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>POC_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-0712541d-f153-411a-b64e-17087f26ac4b' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-0712541d-f153-411a-b64e-17087f26ac4b' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-b80e3081-2b00-48a8-b3ac-55104ed0a539' class='xr-var-data-in' type='checkbox'><label for='data-b80e3081-2b00-48a8-b3ac-55104ed0a539' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
+               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>POC_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-40452814-12fe-4fc0-97a4-562408e24fc8' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-40452814-12fe-4fc0-97a4-562408e24fc8' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-6b8a0baf-e412-4aaf-aa64-b265c9e65aa7' class='xr-var-data-in' type='checkbox'><label for='data-6b8a0baf-e412-4aaf-aa64-b265c9e65aa7' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
@@ -912,7 +1041,7 @@ Data variables:
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
-               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>POP_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-454c5942-0843-475f-bb5c-13fbb05e9c2e' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-454c5942-0843-475f-bb5c-13fbb05e9c2e' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-ddfb0f8d-4e03-405c-af84-b26ead923235' class='xr-var-data-in' type='checkbox'><label for='data-ddfb0f8d-4e03-405c-af84-b26ead923235' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
+               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>POP_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-54c5583d-8057-4864-8653-8731791a6488' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-54c5583d-8057-4864-8653-8731791a6488' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-7ca018d9-660e-4678-baa8-156c578df417' class='xr-var-data-in' type='checkbox'><label for='data-7ca018d9-660e-4678-baa8-156c578df417' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
@@ -924,7 +1053,7 @@ Data variables:
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
-               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>SiO2_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-3876bb67-3534-4d2f-a8fb-cb52989a94a6' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-3876bb67-3534-4d2f-a8fb-cb52989a94a6' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-c024189e-bcec-4566-b7de-145fa8c50f85' class='xr-var-data-in' type='checkbox'><label for='data-c024189e-bcec-4566-b7de-145fa8c50f85' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
+               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>SiO2_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-0f196675-2936-4a97-b4dd-67b36c381186' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-0f196675-2936-4a97-b4dd-67b36c381186' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-d04ae578-e18b-4ccd-972a-75523d6b4050' class='xr-var-data-in' type='checkbox'><label for='data-d04ae578-e18b-4ccd-972a-75523d6b4050' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
@@ -936,7 +1065,7 @@ Data variables:
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
-               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>CaCO3_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-a92db084-8e3a-4b16-abd3-163704afe1e6' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-a92db084-8e3a-4b16-abd3-163704afe1e6' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-359abbf1-c385-4574-ab3f-3731907eb72f' class='xr-var-data-in' type='checkbox'><label for='data-359abbf1-c385-4574-ab3f-3731907eb72f' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
+               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>CaCO3_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-b2467f57-1d4b-46ca-94e2-3ed1065a7b19' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-b2467f57-1d4b-46ca-94e2-3ed1065a7b19' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-cee8ec6a-75b7-46de-9047-19958a9e4ca3' class='xr-var-data-in' type='checkbox'><label for='data-cee8ec6a-75b7-46de-9047-19958a9e4ca3' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol m$^{-2}$ yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array([[       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
@@ -948,7 +1077,7 @@ Data variables:
        [       nan,        nan,        nan, ...,        nan,        nan,
                nan],
        [       nan,        nan,        nan, ...,        nan,        nan,
-               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>N2P_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-60abe73c-fadb-486e-a858-8fd4eae537b1' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-60abe73c-fadb-486e-a858-8fd4eae537b1' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-3ea0dfbe-b74a-4b1c-9d90-9ba97e1bf934' class='xr-var-data-in' type='checkbox'><label for='data-3ea0dfbe-b74a-4b1c-9d90-9ba97e1bf934' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([[      nan,       nan,       nan, ...,       nan,       nan,
+               nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>N2P_FLUX_100m</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-8ad544b0-7510-480d-8a35-6785ad9f9818' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-8ad544b0-7510-480d-8a35-6785ad9f9818' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-d5bd2c1e-c722-467e-9b4c-c0c004a478f8' class='xr-var-data-in' type='checkbox'><label for='data-d5bd2c1e-c722-467e-9b4c-c0c004a478f8' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([[      nan,       nan,       nan, ...,       nan,       nan,
               nan],
        [      nan,       nan,       nan, ...,       nan,       nan,
               nan],
@@ -960,7 +1089,7 @@ Data variables:
        [      nan,       nan,       nan, ...,       nan,       nan,
               nan],
        [      nan,       nan,       nan, ...,       nan,       nan,
-              nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>e_ratio</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-dbc164aa-4f25-4ed2-87c6-a148a4f9e9bd' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-dbc164aa-4f25-4ed2-87c6-a148a4f9e9bd' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-70c69e98-e5e4-47c7-b5bd-3b2d4f47cee2' class='xr-var-data-in' type='checkbox'><label for='data-70c69e98-e5e4-47c7-b5bd-3b2d4f47cee2' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([[      nan,       nan,       nan, ...,       nan,       nan,
+              nan]], dtype=float32)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>e_ratio</span></div><div class='xr-var-dims'>(nlat, nlon)</div><div class='xr-var-dtype'>float32</div><div class='xr-var-preview xr-preview'>nan nan nan nan ... nan nan nan nan</div><input id='attrs-b1679153-0bde-4e29-8af6-0b67ca08b6e2' class='xr-var-attrs-in' type='checkbox' disabled><label for='attrs-b1679153-0bde-4e29-8af6-0b67ca08b6e2' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-9af32429-76f4-4049-93b5-5ac9b7ca92c3' class='xr-var-data-in' type='checkbox'><label for='data-9af32429-76f4-4049-93b5-5ac9b7ca92c3' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'></dl></div><div class='xr-var-data'><pre>array([[      nan,       nan,       nan, ...,       nan,       nan,
               nan],
        [      nan,       nan,       nan, ...,       nan,       nan,
               nan],
@@ -972,8 +1101,10 @@ Data variables:
        [      nan,       nan,       nan, ...,       nan,       nan,
               nan],
        [      nan,       nan,       nan, ...,       nan,       nan,
-              nan]], dtype=float32)</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-b5795549-d5fe-43f0-a1c2-19b5a1a354e4' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-b5795549-d5fe-43f0-a1c2-19b5a1a354e4' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div></div>
+              nan]], dtype=float32)</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-0f5e1281-07a4-4481-b37a-bbcd3bdf8ac5' class='xr-section-summary-in' type='checkbox'  ><label for='section-0f5e1281-07a4-4481-b37a-bbcd3bdf8ac5' class='xr-section-summary' >Attributes: <span>(12)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'><dt><span>time_period_freq :</span></dt><dd>month_1</dd><dt><span>history :</span></dt><dd>none</dd><dt><span>cell_methods :</span></dt><dd>cell_methods = time: mean ==&gt; the variable values are averaged over the time interval between the previous time coordinate and the current one.          cell_methods  absent  ==&gt; the variable values are at the time given by the current time coordinate.</dd><dt><span>title :</span></dt><dd>b.e21.BHIST.f09_g17.CMIP6-historical.011</dd><dt><span>model_doi_url :</span></dt><dd>https://doi.org/10.5065/D67H1H0V</dd><dt><span>Conventions :</span></dt><dd>CF-1.0; http://www.cgd.ucar.edu/cms/eaton/netcdf/CF-current.htm</dd><dt><span>calendar :</span></dt><dd>All years have exactly  365 days.</dd><dt><span>revision :</span></dt><dd>$Id: tavg.F90 89644 2018-08-04 14:26:01Z klindsay $</dd><dt><span>intake_esm_varname :</span></dt><dd>photoC_TOT_zint_100m</dd><dt><span>contents :</span></dt><dd>Diagnostic and Prognostic Variables</dd><dt><span>source :</span></dt><dd>CCSM POP2, the CCSM Ocean Component</dd><dt><span>intake_esm_dataset_key :</span></dt><dd>ocn.historical.pop.h</dd></dl></div></li></ul></div></div></div></div>
 </div>
+<div class="section" id="after-calculation-spin-down-the-cluster">
+<h3>After Calculation, Spin Down the Cluster<a class="headerlink" href="#after-calculation-spin-down-the-cluster" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">client</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
@@ -984,6 +1115,12 @@ Data variables:
 </div>
 </div>
 </div>
+</div>
+</div>
+<div class="section" id="plot-the-results">
+<h2>Plot the Results<a class="headerlink" href="#plot-the-results" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="e-ratio">
+<h3>E Ratio<a class="headerlink" href="#e-ratio" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">e_ratio</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">vmax</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
@@ -991,12 +1128,15 @@ Data variables:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b9b18a403d0&gt;
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b3fdcabd390&gt;
 </pre></div>
 </div>
-<img alt="../_images/biological-pump_9_1.png" src="../_images/biological-pump_9_1.png" />
+<img alt="../_images/biological-pump_17_1.png" src="../_images/biological-pump_17_1.png" />
 </div>
 </div>
+</div>
+<div class="section" id="poc-flux-100-m">
+<h3>POC Flux 100 m<a class="headerlink" href="#poc-flux-100-m" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">POC_FLUX_100m</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
@@ -1004,12 +1144,15 @@ Data variables:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b9b18b25dd0&gt;
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b3fdd1c72d0&gt;
 </pre></div>
 </div>
-<img alt="../_images/biological-pump_10_1.png" src="../_images/biological-pump_10_1.png" />
+<img alt="../_images/biological-pump_19_1.png" src="../_images/biological-pump_19_1.png" />
 </div>
 </div>
+</div>
+<div class="section" id="photoc-tot-zint-100-m">
+<h3>PhotoC TOT Zint 100 m<a class="headerlink" href="#photoc-tot-zint-100-m" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">photoC_TOT_zint_100m</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">vmax</span><span class="o">=</span><span class="mf">4.</span><span class="p">)</span>
@@ -1017,12 +1160,15 @@ Data variables:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b9b1dd97b50&gt;
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b3fdd292710&gt;
 </pre></div>
 </div>
-<img alt="../_images/biological-pump_11_1.png" src="../_images/biological-pump_11_1.png" />
+<img alt="../_images/biological-pump_21_1.png" src="../_images/biological-pump_21_1.png" />
 </div>
 </div>
+</div>
+<div class="section" id="jint-100-m-dic">
+<h3>Jint 100 m DIC<a class="headerlink" href="#jint-100-m-dic" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">Jint_100m_DIC</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">vmin</span><span class="o">=-</span><span class="mf">4.</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
@@ -1030,12 +1176,15 @@ Data variables:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b9b1de8aed0&gt;
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b3fdd45d3d0&gt;
 </pre></div>
 </div>
-<img alt="../_images/biological-pump_12_1.png" src="../_images/biological-pump_12_1.png" />
+<img alt="../_images/biological-pump_23_1.png" src="../_images/biological-pump_23_1.png" />
 </div>
 </div>
+</div>
+<div class="section" id="n2p-flux-100-m">
+<h3>N2P Flux 100 m<a class="headerlink" href="#n2p-flux-100-m" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds</span><span class="o">.</span><span class="n">N2P_FLUX_100m</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
@@ -1043,12 +1192,15 @@ Data variables:
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b9b1df99f10&gt;
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.collections.QuadMesh at 0x2b3fdd54da50&gt;
 </pre></div>
 </div>
-<img alt="../_images/biological-pump_13_1.png" src="../_images/biological-pump_13_1.png" />
+<img alt="../_images/biological-pump_25_1.png" src="../_images/biological-pump_25_1.png" />
 </div>
 </div>
+</div>
+<div class="section" id="add-a-cyclic-point-to-the-dataset">
+<h3>Add a Cyclic Point to the Dataset<a class="headerlink" href="#add-a-cyclic-point-to-the-dataset" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">dsp</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">pop_add_cyclic</span><span class="p">(</span><span class="n">ds</span><span class="p">)</span>
@@ -1086,6 +1238,9 @@ variables:
 </div>
 </div>
 </div>
+</div>
+<div class="section" id="take-a-look-at-ds-glb-which-contains-global-integral-stats">
+<h3>Take a Look at <code class="docutils literal notranslate"><span class="pre">ds_glb</span></code> which Contains Global Integral Stats<a class="headerlink" href="#take-a-look-at-ds-glb-which-contains-global-integral-stats" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ds_glb</span>
@@ -1452,8 +1607,9 @@ Data variables:
     SiO2_FLUX_100m        float64 78.3
     CaCO3_FLUX_100m       float64 0.7677
     N2P_FLUX_100m         float64 17.09
-    e_ratio               float64 0.1478</pre><div class='xr-wrap' hidden><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-d942b1f5-4dce-43e0-a700-c0c59d216a97' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-d942b1f5-4dce-43e0-a700-c0c59d216a97' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-82078b92-e42c-4b87-934b-523b17cbb313' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-82078b92-e42c-4b87-934b-523b17cbb313' class='xr-section-summary'  title='Expand/collapse section'>Coordinates: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'></ul></div></li><li class='xr-section-item'><input id='section-6f6faa35-de62-4104-9edb-659b85112185' class='xr-section-summary-in' type='checkbox'  checked><label for='section-6f6faa35-de62-4104-9edb-659b85112185' class='xr-section-summary' >Data variables: <span>(6)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>photoC_TOT_zint_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>48.38</div><input id='attrs-d7c9ae36-4541-450d-ae94-d57b61bb1e16' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-d7c9ae36-4541-450d-ae94-d57b61bb1e16' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-cec4f7aa-92da-47c1-aadf-c6710f78a34f' class='xr-var-data-in' type='checkbox'><label for='data-cec4f7aa-92da-47c1-aadf-c6710f78a34f' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>Pg C yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array(48.37640707)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>POC_FLUX_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>7.05</div><input id='attrs-251aa299-a179-4905-aa66-313213f1b192' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-251aa299-a179-4905-aa66-313213f1b192' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-d5e0a0ea-243f-4fb4-9a78-3c6c41551c19' class='xr-var-data-in' type='checkbox'><label for='data-d5e0a0ea-243f-4fb4-9a78-3c6c41551c19' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>Pg C yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array(7.05017249)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>SiO2_FLUX_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>78.3</div><input id='attrs-96b38339-2e6c-4d16-97b6-628e08bca893' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-96b38339-2e6c-4d16-97b6-628e08bca893' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-5c76aff7-2914-42d2-b242-5eb43f2823fc' class='xr-var-data-in' type='checkbox'><label for='data-5c76aff7-2914-42d2-b242-5eb43f2823fc' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>Tmol Si yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array(78.2992232)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>CaCO3_FLUX_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.7677</div><input id='attrs-0db23816-012a-43f7-80fd-c428258f1287' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-0db23816-012a-43f7-80fd-c428258f1287' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-b1db6c72-960b-46fa-a541-b595e0166ffe' class='xr-var-data-in' type='checkbox'><label for='data-b1db6c72-960b-46fa-a541-b595e0166ffe' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>Pg C yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array(0.76768008)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>N2P_FLUX_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>17.09</div><input id='attrs-e5ffd0dc-a174-47c1-873f-e71e8aa661a7' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-e5ffd0dc-a174-47c1-873f-e71e8aa661a7' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-36fee1f3-8191-46a6-81f6-1aa9770c313c' class='xr-var-data-in' type='checkbox'><label for='data-36fee1f3-8191-46a6-81f6-1aa9770c313c' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol N:mol P</dd></dl></div><div class='xr-var-data'><pre>array(17.08596864)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>e_ratio</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.1478</div><input id='attrs-85b1776e-2576-408f-aa9d-be88c394a52f' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-85b1776e-2576-408f-aa9d-be88c394a52f' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-5cb0c01d-dc59-42b5-944e-2562c6023eb7' class='xr-var-data-in' type='checkbox'><label for='data-5cb0c01d-dc59-42b5-944e-2562c6023eb7' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd></dd></dl></div><div class='xr-var-data'><pre>array(0.14780106)</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-8255c256-ef28-44f6-8acf-4d5779801400' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-8255c256-ef28-44f6-8acf-4d5779801400' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div></div>
+    e_ratio               float64 0.1478</pre><div class='xr-wrap' hidden><div class='xr-header'><div class='xr-obj-type'>xarray.Dataset</div></div><ul class='xr-sections'><li class='xr-section-item'><input id='section-134e7524-3799-4a2c-ad24-77e6baac116e' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-134e7524-3799-4a2c-ad24-77e6baac116e' class='xr-section-summary'  title='Expand/collapse section'>Dimensions:</label><div class='xr-section-inline-details'></div><div class='xr-section-details'></div></li><li class='xr-section-item'><input id='section-f244dc3d-773c-4d6b-9fb7-089d90fc9d52' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-f244dc3d-773c-4d6b-9fb7-089d90fc9d52' class='xr-section-summary'  title='Expand/collapse section'>Coordinates: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'></ul></div></li><li class='xr-section-item'><input id='section-9bd2a452-b713-4eb1-84b6-0a85974d822f' class='xr-section-summary-in' type='checkbox'  checked><label for='section-9bd2a452-b713-4eb1-84b6-0a85974d822f' class='xr-section-summary' >Data variables: <span>(6)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><ul class='xr-var-list'><li class='xr-var-item'><div class='xr-var-name'><span>photoC_TOT_zint_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>48.38</div><input id='attrs-0981dfb2-c44a-456f-a049-2d7173237edc' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-0981dfb2-c44a-456f-a049-2d7173237edc' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-83025f7d-e27b-402e-a7d9-c7e2f4a8e9ed' class='xr-var-data-in' type='checkbox'><label for='data-83025f7d-e27b-402e-a7d9-c7e2f4a8e9ed' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>Pg C yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array(48.37640707)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>POC_FLUX_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>7.05</div><input id='attrs-b4c1ebd7-feb5-415f-b74e-42c4a6d6ec0c' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-b4c1ebd7-feb5-415f-b74e-42c4a6d6ec0c' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-de6bb3a1-dacb-4d6e-97a0-792c57124f59' class='xr-var-data-in' type='checkbox'><label for='data-de6bb3a1-dacb-4d6e-97a0-792c57124f59' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>Pg C yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array(7.05017249)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>SiO2_FLUX_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>78.3</div><input id='attrs-f22495df-4df7-4e0c-974b-55b98a2012c1' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-f22495df-4df7-4e0c-974b-55b98a2012c1' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-e28ad017-0564-432a-85aa-7e53783ac76a' class='xr-var-data-in' type='checkbox'><label for='data-e28ad017-0564-432a-85aa-7e53783ac76a' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>Tmol Si yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array(78.2992232)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>CaCO3_FLUX_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.7677</div><input id='attrs-c5ebcd39-e241-4b97-ac49-a516b7dcecae' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-c5ebcd39-e241-4b97-ac49-a516b7dcecae' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-bab5a9cf-0328-408f-9b7a-852afb7e3b49' class='xr-var-data-in' type='checkbox'><label for='data-bab5a9cf-0328-408f-9b7a-852afb7e3b49' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>Pg C yr$^{-1}$</dd></dl></div><div class='xr-var-data'><pre>array(0.76768008)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>N2P_FLUX_100m</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>17.09</div><input id='attrs-926567a2-8a1a-4bd1-8cfb-598f3ad3c715' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-926567a2-8a1a-4bd1-8cfb-598f3ad3c715' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-c0e826b0-3c09-4a14-87d3-df2c4e4298ef' class='xr-var-data-in' type='checkbox'><label for='data-c0e826b0-3c09-4a14-87d3-df2c4e4298ef' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd>mol N:mol P</dd></dl></div><div class='xr-var-data'><pre>array(17.08596864)</pre></div></li><li class='xr-var-item'><div class='xr-var-name'><span>e_ratio</span></div><div class='xr-var-dims'>()</div><div class='xr-var-dtype'>float64</div><div class='xr-var-preview xr-preview'>0.1478</div><input id='attrs-6959cbb1-b432-4c00-bb17-7cbf5edf0ccc' class='xr-var-attrs-in' type='checkbox' ><label for='attrs-6959cbb1-b432-4c00-bb17-7cbf5edf0ccc' title='Show/Hide attributes'><svg class='icon xr-icon-file-text2'><use xlink:href='#icon-file-text2'></use></svg></label><input id='data-7435fc12-e49d-485e-9b16-8e1ed011e2db' class='xr-var-data-in' type='checkbox'><label for='data-7435fc12-e49d-485e-9b16-8e1ed011e2db' title='Show/Hide data repr'><svg class='icon xr-icon-database'><use xlink:href='#icon-database'></use></svg></label><div class='xr-var-attrs'><dl class='xr-attrs'><dt><span>units :</span></dt><dd></dd></dl></div><div class='xr-var-data'><pre>array(0.14780106)</pre></div></li></ul></div></li><li class='xr-section-item'><input id='section-5aa579c3-7d14-4977-8d06-5bbaa74aed7c' class='xr-section-summary-in' type='checkbox' disabled ><label for='section-5aa579c3-7d14-4977-8d06-5bbaa74aed7c' class='xr-section-summary'  title='Expand/collapse section'>Attributes: <span>(0)</span></label><div class='xr-section-inline-details'></div><div class='xr-section-details'><dl class='xr-attrs'></dl></div></li></ul></div></div></div></div>
 </div>
+<p>We can use these to create titles for our plots</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">titles</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
@@ -1479,6 +1635,9 @@ Data variables:
 </div>
 </div>
 </div>
+</div>
+<div class="section" id="plot-global-maps-with-global-integrals">
+<h3>Plot Global Maps with Global Integrals<a class="headerlink" href="#plot-global-maps-with-global-integrals" title="Permalink to this headline">¶</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
@@ -1543,14 +1702,7 @@ Data variables:
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/biological-pump_17_0.png" src="../_images/biological-pump_17_0.png" />
-</div>
-</div>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">plot</span>
-</pre></div>
-</div>
+<img alt="../_images/biological-pump_33_0.png" src="../_images/biological-pump_33_0.png" />
 </div>
 </div>
 <div class="cell docutils container">
@@ -1615,7 +1767,9 @@ Data variables:
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="../_images/biological-pump_19_0.png" src="../_images/biological-pump_19_0.png" />
+<img alt="../_images/biological-pump_34_0.png" src="../_images/biological-pump_34_0.png" />
+</div>
+</div>
 </div>
 </div>
 </div>
